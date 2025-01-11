@@ -1,66 +1,193 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel Broadcasting with Pusher
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This repository demonstrates a simple Laravel application that integrates broadcasting using **Pusher**. The application includes:
 
-## About Laravel
+- Setting up Pusher for real-time notifications.
+- Broadcasting an event.
+- A frontend to test notifications.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Installation Guide
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Follow the steps below to set up and run the project:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Prerequisites
 
-## Learning Laravel
+- PHP >= 8.2
+- Composer
+- Node.js and npm
+- Pusher account
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Steps
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+1. **Clone the Repository**:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+   ```bash
+   git clone https://github.com/mejba13/laravel-broadcasting-with-pusher.git
+   cd laravel-broadcasting-with-pusher
+   ```
 
-## Laravel Sponsors
+2. **Install Dependencies**:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+   ```bash
+   composer install
+   npm install
+   npm run dev
+   ```
 
-### Premium Partners
+3. **Environment Setup**:
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+   Copy `.env.example` to `.env`:
 
-## Contributing
+   ```bash
+   cp .env.example .env
+   ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+   Update the `.env` file with your Pusher credentials:
 
-## Code of Conduct
+   ```env
+   BROADCAST_DRIVER=pusher
+   CACHE_DRIVER=file
+   QUEUE_CONNECTION=sync
+   SESSION_DRIVER=file
+   SESSION_LIFETIME=120
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+   PUSHER_APP_ID=1924053
+   PUSHER_APP_KEY=3cb936b7c46ede5a1b7c
+   PUSHER_APP_SECRET=c0e2ea6cbddaaa557a97
+   PUSHER_APP_CLUSTER=mt1
 
-## Security Vulnerabilities
+   VITE_PUSHER_APP_KEY=3cb936b7c46ede5a1b7c
+   VITE_PUSHER_APP_CLUSTER=mt1
+   ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+4. **Generate Application Key**:
 
-## License
+   ```bash
+   php artisan key:generate
+   ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+5. **Run the Application**:
+
+   ```bash
+   php artisan serve
+   ```
+
+6. **Run the Queue Worker**:
+
+   ```bash
+   php artisan queue:work
+   ```
+
+7. **Test the Application**:
+
+   Visit `http://localhost:8000/test-notification` to test the notification system. Open the browser console to verify the event is broadcasted.
+
+## Code Explanation
+
+### Event
+
+**`TestNotificationEvent.php`**:
+
+```php
+<?php
+
+namespace App\Events;
+
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PresenceChannel;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+class TestNotificationEvent implements ShouldBroadcast
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    public $message;
+
+    public function __construct($message)
+    {
+        $this->message = $message;
+    }
+
+    public function broadcastOn()
+    {
+        return new Channel('test-channel');
+    }
+}
+```
+
+### Route
+
+**`web.php`**:
+
+```php
+use Illuminate\Support\Facades\Route;
+use App\Events\TestNotificationEvent;
+
+Route::get('/test-notification', function () {
+    event(new TestNotificationEvent('Hello, this is a test notification!'));
+    return view('test-notification');
+});
+```
+
+### Frontend Script
+
+**`resources/js/test-notification.js`**:
+
+```javascript
+window.Echo.channel('test-channel')
+    .listen('.test-event', (e) => {
+        console.log('Notification:', e.message);
+        alert(e.message);
+    });
+```
+
+### Blade View
+
+**`resources/views/test-notification.blade.php`**:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Notification</title>
+    @vite('resources/js/app.js')
+</head>
+<body>
+    <h1>Laravel Broadcasting with Pusher</h1>
+    <p>Open your browser console to see the notification.</p>
+</body>
+</html>
+```
+
+## Screenshot
+
+![Success Screenshot](https://s3.us-east-1.amazonaws.com/mejba.me/laravel-pusher.png)
+
+## 🔗 Let's Connect
+
+- **Instagram**: [engr_mejba_ahmed](https://www.instagram.com/engr_mejba_ahmed/)
+- **TikTok**: [engr_mejba_ahmed](https://www.tiktok.com/@engr_mejba_ahmed)
+- **YouTube**: [Engr Mejba Ahmed](https://www.youtube.com/channel/UCfLIuNxRfXT7HmvvB9Ld0SA)
+- **Twitter**: [@mejba_92](https://x.com/mejba_92)
+- **LinkedIn**: [Engr Mejba Ahmed](https://www.linkedin.com/in/engr-mejba-ahmed-795ab3165/)
+- **Facebook**: [Engr Mejba Ahmed](https://www.facebook.com/engrmejbaahmed/)
+- **Reddit**: [engrmejbaahmed](https://www.reddit.com/user/engrmejbaahmed/)
+- **Pinterest**: [engrmejbaahmed](https://www.pinterest.com/engrmejbaahmed/)
+- **GitLab**: [engr-mejba-ahmed](https://gitlab.com/engr-mejba-ahmed)
+- **LeetCode**: [engrmejbaahmed](https://leetcode.com/u/engrmejbaahmed/)
+- **HackerOne**: [Engr Mejba Ahmed](https://hackerone.com/engrmejbaahmed?type=user)
+- **HackerRank**: [Dashboard](https://www.hackerrank.com/dashboard)
+- **Bugcrowd**: [EngrMejbaAhmed](https://bugcrowd.com/EngrMejbaAhmed)
+- **Medium**: [Engr Mejba Ahmed](https://medium.com/@engr-mejba-ahmed)
+- **TryHackMe**: [EngrMejbaAhmed](https://tryhackme.com/r/p/EngrMejbaAhmed)
+- **Codewars**: [mejba13](https://www.codewars.com/users/mejba13)
+- **GitHub**: [mejba13](https://github.com/mejba13)
+- **PentesterLab**: [lucid_hacker_721](https://pentesterlab.com/profile/lucid_hacker_721)
+- **DEV.to**: [Engr Mejba Ahmed](https://dev.to/engrmejbaahmed)
+- **Quora**: [Engr Mejba Ahmed](https://www.quora.com/profile/Engr-Mejba-Ahmed)
